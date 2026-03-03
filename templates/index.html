@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CattleAI — Breed Recognition System</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+<link href="/static/style.css" rel="stylesheet">
+
+</head>
+<body>
+
+<!-- Floating Particles -->
+<div class="particles" id="particles"></div>
+
+<!-- ========================
+     NAVBAR
+     ======================== -->
+<nav class="topbar">
+  <div class="container-fluid px-4 d-flex align-items-center justify-content-between">
+
+    <div class="brand">
+      <span class="brand-emoji">🐄</span>
+      <span class="brand-name">CattleAI</span>
+    </div>
+
+    <div class="d-flex align-items-center gap-3">
+      <span class="india-badge">🇮🇳 Made for India</span>
+      <button class="toggle-theme" id="themeBtn" onclick="toggleTheme()">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+
+  </div>
+</nav>
+
+<!-- ========================
+     HERO
+     ======================== -->
+<section class="hero">
+  <div class="container text-center">
+
+    <div class="ai-badge mb-3">
+      <i class="fas fa-brain"></i>&nbsp; AI-Powered Recognition
+    </div>
+
+    <h1 class="hero-title">
+      Image Based Breed Recognition<br>
+      <span class="grad-text">for Cattle &amp; Buffaloes of India</span>
+    </h1>
+
+    <p class="hero-sub">
+      Upload any cattle or buffalo image — our deep learning model identifies
+      the breed instantly with confidence scores and detailed insights.
+    </p>
+
+    <div class="hero-stats">
+      <div class="hstat"><span class="hstat-n">14+</span><span class="hstat-l">Breeds</span></div>
+      <div class="hstat"><span class="hstat-n">ResNet-18</span><span class="hstat-l">Model</span></div>
+      <div class="hstat"><span class="hstat-n">&lt; 2s</span><span class="hstat-l">Speed</span></div>
+      <div class="hstat"><span class="hstat-n">PyTorch</span><span class="hstat-l">Engine</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ========================
+     MAIN CONTENT
+     ======================== -->
+<div class="container main-wrap">
+<div class="row g-4">
+
+  <!-- LEFT — Upload + History -->
+  <div class="col-lg-5">
+
+    <!-- Upload Card -->
+    <div class="gcard">
+
+      <div class="gcard-label">
+        <i class="fas fa-upload"></i> Upload Image
+      </div>
+
+      <!-- Enhanced form for API integration -->
+      <form id="uploadForm">
+        <!-- Drop Zone -->
+        <div class="dropzone" id="dropZone"
+             onclick="document.getElementById('fileInput').click()">
+
+          <div id="dropContent" class="drop-inner">
+            <div class="drop-icon-ring">
+              <i class="fas fa-cloud-upload-alt"></i>
+            </div>
+            <p class="drop-title">Drag &amp; Drop Image Here</p>
+            <p class="drop-sub">or click to browse files</p>
+            <span class="drop-fmt">PNG · JPG · JPEG · WEBP</span>
+          </div>
+
+          <div id="previewWrap" style="display:none;" class="prev-wrap">
+            <img id="prevImg" src="" alt="preview" class="prev-img">
+            <div class="prev-overlay">
+              <i class="fas fa-sync-alt"></i> Change Image
+            </div>
+          </div>
+
+        </div>
+
+        <input type="file" id="fileInput" name="file"
+               accept="image/*" style="display:none;"
+               required onchange="handleFile(event)">
+
+        <button type="submit" class="predict-btn" id="predictBtn">
+          <span class="pbtn-text">
+            <i class="fas fa-magic"></i> Analyze &amp; Predict Breed
+          </span>
+          <span class="pbtn-load" style="display:none;">
+            <span class="spin-ring"></span> Analyzing image...
+          </span>
+        </button>
+
+      </form>
+
+      <!-- Tips -->
+      <div class="tips-box mt-3">
+        <p class="tips-head"><i class="fas fa-lightbulb"></i> Tips for best results</p>
+        <ul class="tips-ul">
+          <li>Use clear, well-lit photos</li>
+          <li>Show the full body of the animal</li>
+          <li>Avoid blurry or dark images</li>
+        </ul>
+      </div>
+
+    </div>
+
+    <!-- History Card -->
+    <div class="gcard mt-4" id="historyCard" style="display:none;">
+
+      <div class="gcard-label d-flex justify-content-between align-items-center">
+        <span><i class="fas fa-history"></i> Recent Predictions</span>
+        <button class="hist-clear-btn" onclick="clearHistory()">
+          <i class="fas fa-trash-alt"></i> Clear
+        </button>
+      </div>
+
+      <div class="hist-list" id="historyList">
+        <!-- History items will be populated dynamically -->
+      </div>
+
+    </div>
+
+  </div><!-- /col-left -->
+
+  <!-- RIGHT — Results / Placeholder -->
+  <div class="col-lg-7">
+
+    <!-- ===== RESULT PANEL ===== -->
+    <div class="gcard" id="resultPanel" style="display:none;">
+
+      <!-- Main Result -->
+      <div class="res-header">
+        <div class="res-icon" id="resIcon">🐄</div>
+        <div class="res-title-group">
+          <span class="res-small-label">Identified Breed</span>
+          <h2 class="res-breed-name" id="breedName">Breed Name</h2>
+        </div>
+        <div class="conf-pill" id="confidencePill">
+          <span id="confidenceScore">0</span>%
+        </div>
+      </div>
+
+      <!-- Confidence Bar -->
+      <div class="conf-section">
+        <div class="conf-row">
+          <span>Confidence Score</span>
+          <strong id="confidenceText">0%</strong>
+        </div>
+        <div class="conf-track">
+          <div class="conf-fill" id="confidenceBar"
+               style="--tw: 0%">
+          </div>
+        </div>
+      </div>
+
+      <!-- Description -->
+      <p class="breed-desc" id="breedDescription">Breed description will appear here...</p>
+
+      <!-- Details Grid -->
+      <div class="detail-grid" id="breedDetailsGrid" style="display:none;">
+        <div class="detail-tile" id="originTile">
+          <i class="fas fa-globe-asia"></i>
+          <span class="dt-label">Origin</span>
+          <span class="dt-val" id="breedOrigin">-</span>
+        </div>
+
+        <div class="detail-tile" id="milkYieldTile">
+          <i class="fas fa-tint"></i>
+          <span class="dt-label">Milk Yield</span>
+          <span class="dt-val" id="breedMilkYield">-</span>
+        </div>
+
+        <div class="detail-tile" id="purposeTile">
+          <i class="fas fa-bullseye"></i>
+          <span class="dt-label">Purpose</span>
+          <span class="dt-val" id="breedPurpose">-</span>
+        </div>
+
+        <div class="detail-tile" id="fatContentTile">
+          <i class="fas fa-flask"></i>
+          <span class="dt-label">Fat Content</span>
+          <span class="dt-val" id="breedFatContent">-</span>
+        </div>
+      </div>
+
+      <!-- Characteristics -->
+      <div class="char-box" id="characteristicsBox" style="display:none;">
+        <i class="fas fa-info-circle"></i>
+        <span id="breedCharacteristics">Characteristics will appear here...</span>
+      </div>
+
+    </div>
+
+    <!-- Top-3 Predictions -->
+    <div class="gcard mt-4" id="topPredictionsPanel" style="display:none;">
+
+      <div class="gcard-label">
+        <i class="fas fa-chart-bar"></i> All Prediction Scores
+      </div>
+
+      <div id="topPredictionsList">
+        <!-- Top predictions will be populated dynamically -->
+      </div>
+
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="action-row mt-3" id="actionButtons" style="display:none;">
+      <button class="act-btn act-copy" onclick="copyResult()">
+        <i class="fas fa-copy"></i> Copy Result
+      </button>
+      <button class="act-btn act-share" onclick="shareResult()">
+        <i class="fas fa-share-alt"></i> Share
+      </button>
+      <button class="act-btn act-new" onclick="resetForm()">
+        <i class="fas fa-redo"></i> New Prediction
+      </button>
+    </div>
+
+    <!-- ===== PLACEHOLDER ===== -->
+    <div class="gcard placeholder-card" id="placeholderCard">
+      <div class="ph-content">
+
+        <div class="ph-rings">
+          <div class="ring r1"></div>
+          <div class="ring r2"></div>
+          <div class="ring r3"></div>
+          <span class="ring-icon">🐄</span>
+        </div>
+
+        <h3 class="ph-title">Ready to Identify</h3>
+        <p class="ph-text">
+          Upload an image of cattle or buffalo to get instant breed
+          recognition with detailed insights and confidence scores.
+        </p>
+
+        <div class="supported-section">
+          <p class="sup-label">Supported Breeds</p>
+          <div class="sup-tags">
+            <span class="sup-tag">Gir</span>
+            <span class="sup-tag">Sahiwal</span>
+            <span class="sup-tag">Ongole</span>
+            <span class="sup-tag">Murrah</span>
+            <span class="sup-tag">Jaffarabadi</span>
+            <span class="sup-tag">More...</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /col-right -->
+
+</div><!-- /row -->
+</div><!-- /container -->
+
+<!-- Toast -->
+<div class="toast-box" id="toastBox"></div>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container text-center">
+    <p>🐄 <strong>CattleAI</strong> — Image Based Breed Recognition for Cattle &amp; Buffaloes of India</p>
+    <p class="ft-sub">Powered by ResNet-18 &nbsp;·&nbsp; FastAPI &nbsp;·&nbsp; PyTorch</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+
+// ===========================
+// API Configuration
+// ===========================
+const API_BASE_URL = window.location.origin; // Use the current domain
+
+// ===========================
+// Floating Particles
+// ===========================
+(function createParticles() {
+  const c = document.getElementById('particles');
+  for (let i = 0; i < 22; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left              = Math.random() * 100 + 'vw';
+    p.style.width             =
+    p.style.height            = (Math.random() * 8 + 4) + 'px';
+    p.style.animationDelay    = Math.random() * 15 + 's';
+    p.style.animationDuration = (Math.random() * 10 + 12) + 's';
+    c.appendChild(p);
+  }
+})();
+
+// ===========================
+// Dark / Light Theme
+// ===========================
+function toggleTheme() {
+  const html = document.documentElement;
+  const btn  = document.getElementById('themeBtn');
+  if (html.getAttribute('data-theme') === 'dark') {
+    html.setAttribute('data-theme', 'light');
+    btn.innerHTML = '<i class="fas fa-sun"></i>';
+  } else {
+    html.setAttribute('data-theme', 'dark');
+    btn.innerHTML = '<i class="fas fa-moon"></i>';
+  }
+}
+
+// ===========================
+// Drag & Drop
+// ===========================
+const dropZone = document.getElementById('dropZone');
+
+dropZone.addEventListener('dragover', e => {
+  e.preventDefault();
+  dropZone.classList.add('dz-over');
+});
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dz-over'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dz-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById('fileInput').files = dt.files;
+    showPreview(file);
+  }
+});
+
+function handleFile(e) {
+  const file = e.target.files[0];
+  if (file) showPreview(file);
+}
+
+function showPreview(file) {
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('prevImg').src    = e.target.result;
+    document.getElementById('dropContent').style.display = 'none';
+    document.getElementById('previewWrap').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+
+// ===========================
+// Form Submission & API Call
+// ===========================
+document.getElementById('uploadForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
+  
+  const fileInput = document.getElementById('fileInput');
+  const file = fileInput.files[0];
+  
+  if (!file) {
+    toast('❌ Please select an image file');
+    return;
+  }
+  
+  // Show loading state
+  const btn = document.getElementById('predictBtn');
+  btn.querySelector('.pbtn-text').style.display = 'none';
+  btn.querySelector('.pbtn-load').style.display = 'flex';
+  btn.disabled = true;
+  
+  try {
+    const formData = new FormData();
+    formData.append('file', file);
+    
+    // Call the FastAPI endpoint
+    const response = await fetch(`${API_BASE_URL}/predict`, {
+      method: 'POST',
+      body: formData
+    });
+    
+    const result = await response.json();
+    
+    if (response.ok) {
+      displayResult(result);
+      loadRecentPredictions(); // Load recent predictions after successful prediction
+    } else {
+      throw new Error(result.detail || 'Prediction failed');
+    }
+  } catch (error) {
+    console.error('Prediction error:', error);
+    toast(`❌ Prediction failed: ${error.message}`);
+  } finally {
+    // Reset button state
+    btn.querySelector('.pbtn-text').style.display = 'flex';
+    btn.querySelector('.pbtn-load').style.display = 'none';
+    btn.disabled = false;
+  }
+});
+
+// ===========================
+// Display Result
+// ===========================
+function displayResult(data) {
+  // Hide placeholder, show result panel
+  document.getElementById('placeholderCard').style.display = 'none';
+  document.getElementById('resultPanel').style.display = 'block';
+  document.getElementById('actionButtons').style.display = 'flex';
+  
+  // Update breed information
+  document.getElementById('breedName').textContent = data.breed;
+  document.getElementById('confidenceScore').textContent = data.confidence;
+  document.getElementById('confidenceText').textContent = `${data.confidence}%`;
+  
+  // Update confidence bar
+  const confidenceBar = document.getElementById('confidenceBar');
+  confidenceBar.style.width = `${data.confidence}%`;
+  confidenceBar.style.setProperty('--tw', `${data.confidence}%`);
+  
+  // Update confidence pill color based on score
+  const confidencePill = document.getElementById('confidencePill');
+  confidencePill.className = 'conf-pill'; // Reset classes
+  if (data.confidence >= 90) {
+    confidencePill.classList.add('pill-green');
+  } else if (data.confidence >= 70) {
+    confidencePill.classList.add('pill-yellow');
+  } else {
+    confidencePill.classList.add('pill-red');
+  }
+  
+  // Update breed details if available
+  if (data.breed_info) {
+    document.getElementById('breedDescription').textContent = data.breed_info.description || 'No description available';
+    document.getElementById('breedOrigin').textContent = data.breed_info.origin || '-';
+    document.getElementById('breedMilkYield').textContent = data.breed_info.milk_yield || '-';
+    document.getElementById('breedPurpose').textContent = data.breed_info.purpose || '-';
+    document.getElementById('breedFatContent').textContent = data.breed_info.fat_content || '-';
+    document.getElementById('breedCharacteristics').textContent = data.breed_info.characteristics || 'No characteristics available';
+    
+    // Show breed details section
+    document.getElementById('breedDetailsGrid').style.display = 'grid';
+    document.getElementById('characteristicsBox').style.display = 'flex';
+    
+    // Update icon if available
+    if (data.breed_info.icon) {
+      document.getElementById('resIcon').textContent = data.breed_info.icon;
+    }
+  } else {
+    document.getElementById('breedDescription').textContent = 'Breed details not available';
+    document.getElementById('breedDetailsGrid').style.display = 'none';
+    document.getElementById('characteristicsBox').style.display = 'none';
+  }
+  
+  // Display top predictions
+  displayTopPredictions(data.top_predictions);
+}
+
+// ===========================
+// Display Top Predictions
+// ===========================
+function displayTopPredictions(predictions) {
+  const container = document.getElementById('topPredictionsList');
+  container.innerHTML = ''; // Clear previous content
+  
+  if (!predictions || predictions.length === 0) {
+    container.innerHTML = '<p class="text-muted">No additional predictions available</p>';
+    document.getElementById('topPredictionsPanel').style.display = 'none';
+    return;
+  }
+  
+  document.getElementById('topPredictionsPanel').style.display = 'block';
+  
+  predictions.forEach((item, index) => {
+    const row = document.createElement('div');
+    row.className = `tp-row ${index === 0 ? 'tp-first' : ''}`;
+    
+    row.innerHTML = `
+      <div class="tp-rank ${index === 0 ? 'tp-rank-gold' : ''}">
+        ${index + 1}
+      </div>
+      <div class="tp-info">
+        <span class="tp-name">${item.breed}</span>
+        <div class="tp-track">
+          <div class="tp-fill ${index === 0 ? 'tp-fill-main' : 'tp-fill-dim'}"
+               style="--tw: ${item.confidence}%; width: ${item.confidence}%">
+          </div>
+        </div>
+      </div>
+      <span class="tp-pct">${item.confidence}%</span>
+    `;
+    
+    container.appendChild(row);
+  });
+  
+  // Animate the bars after a short delay
+  setTimeout(() => {
+    document.querySelectorAll('.tp-fill').forEach(el => {
+      el.style.width = el.style.getPropertyValue('--tw') ||
+        getComputedStyle(el).getPropertyValue('--tw');
+    });
+  }, 100);
+}
+
+// ===========================
+// Animate Bars
+// ===========================
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    document.querySelectorAll('.conf-fill, .tp-fill').forEach(el => {
+      el.style.width = el.style.getPropertyValue('--tw') ||
+        getComputedStyle(el).getPropertyValue('--tw');
+    });
+  }, 400);
+});
+
+// ===========================
+// Load Recent Predictions
+// ===========================
+async function loadRecentPredictions() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/predictions/recent?limit=5`);
+    const data = await response.json();
+    
+    if (response.ok && data.predictions && data.predictions.length > 0) {
+      displayHistory(data.predictions);
+    } else {
+      document.getElementById('historyCard').style.display = 'none';
+    }
+  } catch (error) {
+    console.error('Error loading history:', error);
+    document.getElementById('historyCard').style.display = 'none';
+  }
+}
+
+// ===========================
+// Display History
+// ===========================
+function displayHistory(predictions) {
+  const container = document.getElementById('historyList');
+  container.innerHTML = ''; // Clear previous content
+  
+  predictions.forEach(item => {
+    const historyItem = document.createElement('div');
+    historyItem.className = 'hist-item';
+    
+    historyItem.innerHTML = `
+      <div class="hist-thumb">
+        <i class="fas fa-cow" style="font-size: 1.5rem;"></i>
+      </div>
+      <div class="hist-info">
+        <span class="hist-breed">${item.predicted_breed}</span>
+        <span class="hist-conf">${item.confidence}% confidence</span>
+        <span class="hist-time">${new Date(item.timestamp).toLocaleString()}</span>
+      </div>
+      <div class="hist-mini-bar">
+        <div class="hist-mini-fill" style="width:${item.confidence}%"></div>
+      </div>
+    `;
+    
+    container.appendChild(historyItem);
+  });
+  
+  document.getElementById('historyCard').style.display = 'block';
+}
+
+// ===========================
+// Clear History
+// ===========================
+async function clearHistory() {
+  // Note: The backend doesn't currently have a clear history endpoint
+  // For now, we'll just hide the history card
+  document.getElementById('historyCard').style.display = 'none';
+  toast('History cleared');
+}
+
+// ===========================
+// Reset Form
+// ===========================
+function resetForm() {
+  // Reset form
+  document.getElementById('uploadForm').reset();
+  
+  // Reset preview
+  document.getElementById('dropContent').style.display = 'flex';
+  document.getElementById('previewWrap').style.display = 'none';
+  
+  // Hide result panel and show placeholder
+  document.getElementById('resultPanel').style.display = 'none';
+  document.getElementById('topPredictionsPanel').style.display = 'none';
+  document.getElementById('actionButtons').style.display = 'none';
+  document.getElementById('placeholderCard').style.display = 'block';
+}
+
+// ===========================
+// Copy Result
+// ===========================
+function copyResult() {
+  const breed = document.getElementById('breedName').textContent;
+  const confidence = document.getElementById('confidenceScore').textContent;
+  const origin = document.getElementById('breedOrigin').textContent;
+  const milkYield = document.getElementById('breedMilkYield').textContent;
+  const purpose = document.getElementById('breedPurpose').textContent;
+  
+  const text = 
+    `Breed     : ${breed}\n` +
+    `Confidence: ${confidence}%\n` +
+    `Origin    : ${origin}\n` +
+    `Milk Yield: ${milkYield}\n` +
+    `Purpose   : ${purpose}`;
+  
+  navigator.clipboard.writeText(text)
+    .then(() => toast('✅ Result copied to clipboard!'))
+    .catch(()  => toast('❌ Copy failed, please try manually.'));
+}
+
+// ===========================
+// Share Result
+// ===========================
+function shareResult() {
+  const breed = document.getElementById('breedName').textContent;
+  const confidence = document.getElementById('confidenceScore').textContent;
+  
+  if (navigator.share) {
+    navigator.share({
+      title : 'CattleAI Prediction',
+      text  : `Identified ${breed} with ${confidence}% confidence using CattleAI!`
+    }).catch(error => {
+      console.log('Sharing failed:', error);
+      copyResult(); // Fallback to copying
+    });
+  } else {
+    copyResult();
+    toast('📋 Link copied — share it anywhere!');
+  }
+}
+
+// ===========================
+// Toast
+// ===========================
+function toast(msg) {
+  const el = document.getElementById('toastBox');
+  el.textContent = msg;
+  el.classList.add('toast-show');
+  setTimeout(() => el.classList.remove('toast-show'), 3200);
+}
+
+// ===========================
+// Initialize on load
+// ===========================
+document.addEventListener('DOMContentLoaded', function() {
+  // Load recent predictions on page load
+  loadRecentPredictions().catch(console.error);
+});
+
+</script>
+</body>
+</html>
