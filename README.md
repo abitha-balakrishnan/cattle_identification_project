@@ -6,6 +6,7 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-green.svg)](https://fastapi.tiangolo.com/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0+-red.svg)](https://pytorch.org/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Live Demo](https://img.shields.io/badge/🔴_Live_Demo-Click_Here-brightgreen?style=for-the-badge)](https://cattle-scope.vercel.app/)
 ## 📋 Overview
 
 This project implements an AI-powered system for recognizing Indian cattle and buffalo breeds from images using deep learning. The system uses transfer learning with ResNet-18 architecture to achieve high accuracy in breed classification.
