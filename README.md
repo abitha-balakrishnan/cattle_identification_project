@@ -1,4 +1,4 @@
-#🐄 Cattle Breed Recognition System
+🐄 Cattle Breed Recognition System
 
 **Image based breed recognition for cattle and buffaloes of India using Deep Learning**
 
