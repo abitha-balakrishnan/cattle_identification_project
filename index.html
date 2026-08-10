@@ -110,7 +110,7 @@
 
         <input type="file" id="fileInput" name="file"
                accept="image/*" style="display:none;"
-               required onchange="handleFile(event)">
+               onchange="handleFile(event)">
 
         <button type="submit" class="predict-btn" id="predictBtn">
           <span class="pbtn-text">
@@ -186,6 +186,15 @@
 
       <!-- Description -->
       <p class="breed-desc" id="breedDescription">Breed description will appear here...</p>
+
+      <!-- Wrong Image / Low Confidence Warning -->
+      <div class="alert alert-warning mt-3 d-flex align-items-center gap-2" id="wrongImageWarning" style="display:none; border-radius: 8px; font-size: 0.9rem; background-color: rgba(255, 193, 7, 0.12); border-color: rgba(255, 193, 7, 0.25); color: #ffc107; padding: 12px 16px;">
+        <i class="fas fa-exclamation-triangle" style="font-size: 1.2rem; flex-shrink: 0;"></i>
+        <div>
+          <strong>Wrong Image or Low Confidence:</strong> 
+          The model is not very confident about this prediction. If you have uploaded a non-cattle image, please upload a clear, full-body photo of a cow or buffalo.
+        </div>
+      </div>
 
       <!-- Details Grid -->
       <div class="detail-grid" id="breedDetailsGrid" style="display:none;">
@@ -368,6 +377,10 @@ let onnxSession = null;
 async function getONNXSession() {
   if (!onnxSession) {
     console.log("Loading ONNX model...");
+    // Configure WebAssembly paths to load from CDN
+    ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/';
+    // Disable multi-threading since GitHub Pages does not support Cross-Origin-Isolation
+    ort.env.wasm.numThreads = 1;
     // Use WASM backend (CPU inference in browser)
     onnxSession = await ort.InferenceSession.create('./cattle_model.onnx', {
       executionProviders: ['wasm']
@@ -564,7 +577,9 @@ document.getElementById('uploadForm').addEventListener('submit', async function 
     
   } catch (error) {
     console.error('Prediction error:', error);
-    toast(`❌ Prediction failed: ${error.message}`);
+    // Handle integer exceptions thrown by Emscripten
+    const errorMsg = error instanceof Error ? error.message : (typeof error === 'number' ? `WASM Exception (${error})` : String(error));
+    toast(`❌ Prediction failed: ${errorMsg}`);
   } finally {
     // Reset button state
     btn.querySelector('.pbtn-text').style.display = 'flex';
@@ -620,10 +635,19 @@ function displayResult(data) {
     if (data.breed_info.icon) {
       document.getElementById('resIcon').textContent = data.breed_info.icon;
     }
+    
+    // Show a warning if confidence is too low (meaning it's likely a wrong picture)
+    const warningBox = document.getElementById('wrongImageWarning');
+    if (data.confidence < 75) {
+      warningBox.style.display = 'flex';
+    } else {
+      warningBox.style.display = 'none';
+    }
   } else {
     document.getElementById('breedDescription').textContent = 'Breed details not available';
     document.getElementById('breedDetailsGrid').style.display = 'none';
     document.getElementById('characteristicsBox').style.display = 'none';
+    document.getElementById('wrongImageWarning').style.display = 'none';
   }
   
   // Display top predictions
@@ -779,6 +803,9 @@ function resetForm() {
   document.getElementById('topPredictionsPanel').style.display = 'none';
   document.getElementById('actionButtons').style.display = 'none';
   document.getElementById('placeholderCard').style.display = 'block';
+  
+  // Hide warning box
+  document.getElementById('wrongImageWarning').style.display = 'none';
 }
 
 // ===========================
