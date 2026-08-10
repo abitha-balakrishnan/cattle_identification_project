@@ -381,6 +381,8 @@ async function getONNXSession() {
     ort.env.wasm.wasmPaths = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.17.1/dist/';
     // Disable multi-threading since GitHub Pages does not support Cross-Origin-Isolation
     ort.env.wasm.numThreads = 1;
+    // Disable SIMD to prevent compilation/execution exceptions in non-supported environments
+    ort.env.wasm.simd = false;
     // Use WASM backend (CPU inference in browser)
     onnxSession = await ort.InferenceSession.create('./cattle_model.onnx', {
       executionProviders: ['wasm']
